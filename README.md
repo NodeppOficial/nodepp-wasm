@@ -1,6 +1,6 @@
 # Nodepp-EMCC
 
-Emscripten Nodepp port
+Nodepp Port for Emscripten 
 
 ## Dependencies 
 - **emscripten**
