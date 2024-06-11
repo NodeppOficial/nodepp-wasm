@@ -21,7 +21,7 @@ Nodepp Port for Emscripten
 ## Build & Run
 
 ```bash
-    em++ -o ./www/index.html main.cpp \
+    em++ -o www/index.html main.cpp \
     -I ./include -pthread \
     -s PROXY_POSIX_SOCKETS \
     -s PTHREAD_POOL_SIZE=8 \

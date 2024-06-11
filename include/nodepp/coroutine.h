@@ -82,7 +82,7 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 #define MAX_SOCKET SOMAXCONN
 #define CHUNK_SIZE 65536
 #define UNBFF_SIZE 4096
-#define TIMEOUT    1
+#define TIMEOUT    3
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -109,7 +109,6 @@ struct generator_t { protected: int _state_ = 0; };
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #define NODEPP_KERNEL_WASM 1
-
 #define _KERNEL NODEPP_KERNEL_WASM
 
 /*────────────────────────────────────────────────────────────────────────────*/
