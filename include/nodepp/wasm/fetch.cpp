@@ -10,33 +10,8 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #pragma once
-#include <emscripten/websocket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netdb.h>
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-namespace nodepp { namespace _socket_ {
-
-    void start_device(){ static bool sockets=false; 
-        if( sockets == false ){
-
-            process::onSIGEXIT([=](){
-                #ifdef SIGPIPE
-                    process::signal::unignore( SIGPIPE );
-                #endif 
-            });
-            
-                #ifdef SIGPIPE
-                    process::signal::ignore( SIGPIPE );
-                #endif
-
-        }   sockets = true;
-    }
-
-}}
+#include <emscripten/emscripten.h>
+#include <emscripten/fetch.h>
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
