@@ -100,6 +100,8 @@ public:
 
     bool has_value() const noexcept { return obj->mem.has_value(); }
 
+    uint type_size() const noexcept { return obj->mem.type_size(); }
+
     template< class U > 
     U as() const { 
         if ( get_type_id() < 20 && get_type_id() > 21 &&
@@ -147,6 +149,20 @@ public:
     }
 
     int get_type_id() const noexcept { return obj->type; }
+
+    /*─······································································─*/
+
+    bool empty() const noexcept { 
+        if( obj->type == 21 ){ 
+            auto   mem = obj->mem.as<ARRAY>();
+            return mem.empty();
+        } elif( obj->type == 20 ) {
+            auto   mem = obj->mem.as<QUEUE>();
+            return mem.empty();
+        }   return false;
+    }
+
+    /*─······································································─*/
 
     ulong size() const noexcept { 
         if( obj->type == 21 ){ 

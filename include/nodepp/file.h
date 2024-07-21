@@ -9,12 +9,15 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_OSS
-#define NODEPP_OSS
+#ifndef NODEPP_FILE
+#define NODEPP_FILE
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#include "wasm/os.cpp"
+#include "os.h"
+#include "event.h"
+#include "generator.h"
+#include "wasm/file.cpp"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

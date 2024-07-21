@@ -9,60 +9,68 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_EXCEPT
-#define NODEPP_EXCEPT
+#ifndef NODEPP_STREAM
+#define NODEPP_STREAM
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { class except_t { 
-protected: 
+#include "file.h"
+#include "event.h"
+#include "generator.h"
 
-    struct NODE { 
-        void *ev = nullptr;
-        string_t msg;
-    };  ptr_t<NODE> obj;
+/*────────────────────────────────────────────────────────────────────────────*/
 
-public:
+namespace nodepp { namespace stream {
 
-    virtual ~except_t() noexcept { 
-        if( obj->ev == nullptr ){ return; }
-   	    process::onSIGERR.off( obj->ev );
-    }
-
-    except_t() noexcept : obj( new NODE() ) {}
-
-    /*─······································································─*/
-
-    template< class T, class = typename type::enable_if<type::is_class<T>::value,T>::type >
-    except_t( const T& except_type ) noexcept : obj(new NODE()) {
-        obj->msg = except_type.what(); auto inp = type::bind( this ); 
-        obj->ev  = process::onSIGERR.once([=]( ... ){ inp->print(); });
-    }
-
-    /*─······································································─*/
-
-    template< class... T >
-    except_t( const T&... msg ) noexcept : obj(new NODE()) {
-        obj->msg = string::join( " ", msg... ); auto inp = type::bind( this ); 
-        obj->ev  = process::onSIGERR.once([=]( ... ){ inp->print(); });
-    }
-
-    /*─······································································─*/
-
-    except_t( const string_t& msg ) noexcept : obj(new NODE()) {
-        obj->msg = msg; auto inp = type::bind( this ); 
-        obj->ev  = process::onSIGERR.once([=]( ... ){ inp->print(); });
-    }
-
-    /*─······································································─*/
-
-    const char* what() const noexcept { return obj->msg.c_str(); }
-
-    operator char*() const noexcept { return (char*)what(); }
+    template< class T > void unpipe( const T& input )
+        { input.stop(); input.onUnpipe.emit(); }
     
-    void print() const noexcept { console::error(obj->msg); } 
+    /*─······································································─*/
+    
+    template< class... T >
+    void duplex( const T&... inp ){ _stream_::duplex arg;
+        process::poll::add( arg, inp... );
+    }
+    
+    /*─······································································─*/
+    
+    file_t pipe( const string_t& path, const string_t& mode ){
+        auto inp = file_t( path, mode ); _stream_::pipe arg;
+        process::poll::add( arg, inp );  return inp;
+    }
+    
+    template< class... T >
+    void pipe( const T&... inp ){ _stream_::pipe arg;
+        process::poll::add( arg, inp... );
+    }
+    
+    /*─······································································─*/
+    
+    file_t line( const string_t& path, const string_t& mode ){
+        auto inp = file_t( path, mode ); _stream_::line arg;
+        process::poll::add( arg, inp );  return inp;
+    }
+    
+    template< class... T >
+    void line( const T&... inp ){ _stream_::line arg;
+        process::poll::add( arg, inp... );
+    }
+    
+    /*─······································································─*/
+    
+    template< class T, class V >
+    ulong await( const T& fa, const V& fb ){ ulong result; _stream_::pipe _read;
+        fa.onData([&]( string_t chunk ){ result += chunk.size(); });
+        process::await( _read, fa, fb ); return result;
+    }
+    
+    template< class T >
+    string_t await( const T& fp ){ string_t result; _stream_::pipe _read;
+        fp.onData([&]( string_t chunk ){ result += chunk; });
+        process::await( _read, fp ); return result;
+    }
 
-};}
+}}
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

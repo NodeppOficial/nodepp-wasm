@@ -11,6 +11,7 @@
 
 #ifndef NODEPP_ENCODER
 #define NODEPP_ENCODER
+#define BASE8  "0123456789abcdef"
 #define BASE64 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 /*────────────────────────────────────────────────────────────────────────────*/
@@ -40,6 +41,26 @@ namespace nodepp { namespace encoder {
     ulong hash( int key, int tableSize ) { return key % tableSize; }
 
 }}
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+namespace nodepp { namespace encoder { namespace buffer {
+
+    string_t buff2hex( const string_t& inp ){
+        string_t out; for( auto x : inp ){
+            out += string::format( "%02x", (uchar)x );
+        }   return out;
+    }
+
+    string_t hex2buff( const string_t& inp ){
+        auto x = inp; string_t out; while( !x.empty() ){
+            auto y = x.splice(0,2); char ch=0;
+            string::parse(y,"%02x",&ch);
+            out.push( ch );
+        }   return out;
+    }
+
+}}}
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -76,7 +97,7 @@ namespace nodepp { namespace encoder { namespace bin {
 
     template< class T >
     T set( const ptr_t<bool>& num ){ T res = 0;
-         if ( num.empty() ){ return res; }
+        if  ( num.empty() ){ return res; }
         for ( auto x : num ){
               res = res << 1 | ( x & 1 );
         }     return res;
@@ -104,14 +125,15 @@ namespace nodepp { namespace encoder { namespace hex {
     }
 
     template< class T, class = typename type::enable_if<type::is_integral<T>::value,T>::type >
-    string_t get( T num ){ ptr_t<char> out ( sizeof(num), 0 );
-        int x = sprintf( &out, "%x", num ); 
-        return { &out, (ulong)x };
+    string_t get( T num ){ string_t out; do {
+             auto p = type::cast<uchar>( num & (T)(0xf) );
+             out.unshift( BASE8[p] ); num >>= 4;
+        } while( num != 0 ); return out;
     }
 
     template< class T, class = typename type::enable_if<type::is_integral<T>::value,T>::type >
     T set( string_t num ){ if ( num.empty() ){ return 0; } 
-        T out = 0; for ( auto c: num ){    out  = out << 4;
+        T out = 0; for ( auto c: num ){    out  = out<<4;
               if ( c >= '0' && c <= '9' ){ out |= c - '0'     ; } 
             elif ( c >= 'a' && c <= 'f' ){ out |= c - 'a' + 10; } 
             elif ( c >= 'A' && c <= 'F' ){ out |= c - 'A' + 10; } 
@@ -258,4 +280,5 @@ namespace nodepp { namespace encoder { namespace base64 {
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #undef BASE64
+#undef BASE8
 #endif
