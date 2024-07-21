@@ -48,8 +48,7 @@ void onMain() {
 }
 ```
 
-## Examples
-- Examples : [here](https://github.com/NodeppOficial/Nodepp/tree/main/examples)
+### More Examples [here](https://github.com/NodeppOficial/Nodepp/tree/main/examples)
 
 ## FAQ
 - reddit : [/r/Cplusplus/](https://www.reddit.com/r/Cplusplus/comments/19e2kw3/write_asynchronous_code_with_c_nodepp/)
