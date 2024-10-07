@@ -1,6 +1,8 @@
 compile.sh
 server.cpp
+server
 main.cpp
 main
 /www
 .env
+ssl
