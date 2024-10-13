@@ -14,6 +14,7 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
+#include <typeinfo>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>

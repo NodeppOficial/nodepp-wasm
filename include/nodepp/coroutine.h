@@ -70,6 +70,12 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
+#define forEach( X, ITEM ) for( auto& X : ITEM )
+#define forEver() for (;;)
+#define elif else if
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
 #define _FUNC_  __PRETTY_FUNCTION__
 #define _NAME_  __FUNCTION__
 #define _DATE_  __DATE__
@@ -79,20 +85,32 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
+#define CHUNK_SIZE 65536
+#define UNBFF_SIZE 4096
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#ifndef MAX_WORKERS
+#define MAX_WORKERS 1024
+#endif
+
+#ifndef MAX_EVENTS
+#define MAX_EVENTS  1024
+#endif
+
 #ifndef MAX_FILENO
-#define MAX_FILENO FD_SETSIZE
+#define MAX_FILENO  1024
+#endif
+
+#ifndef MAX_TASKS
+#define MAX_TASKS   1024
 #endif
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #ifndef TIMEOUT
-#define TIMEOUT 3
+#define TIMEOUT 1
 #endif
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define CHUNK_SIZE 65536
-#define UNBFF_SIZE 4096
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -111,12 +129,6 @@ struct generator_t { protected: int _state_ = 0; };
 #define ushort  unsigned short
 #define uint    unsigned int
 #endif
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define forEach( X, ITEM ) for( auto& X : ITEM )
-#define forEver() for (;;)
-#define elif else if
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
