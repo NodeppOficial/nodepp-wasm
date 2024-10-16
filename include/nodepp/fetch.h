@@ -9,14 +9,16 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_FILE
-#define NODEPP_FILE
+#ifndef NODEPP_FS
+#define NODEPP_FS
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#include "event.h"
-#include "generator.h"
-#include "wasm/file.cpp"
+#include "any.h"
+#include "url.h"
+#include "path.h"
+#include "promise.h"
+#include "wasm/fetch.cpp"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

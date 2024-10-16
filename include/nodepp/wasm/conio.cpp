@@ -43,8 +43,7 @@ namespace nodepp { namespace conio {
         int last = sizeof...( args ), size = 0;
         string::map([&]( string_t arg ){ 
             size += pout( arg + ( --last<1 ? "" : " " ) ); 
-        },  args... ); 
-            size += pout("\033[0m"); 
+        },  args... ); size += pout("\033[0m"); 
         return size;
     }
 
@@ -53,8 +52,7 @@ namespace nodepp { namespace conio {
         int last = sizeof...( args ), size = 0;
         string::map([&]( string_t arg ){ 
             size += perr( arg + ( --last<1 ? "" : " " ) ); 
-        },  args... ); 
-            size += perr("\033[0m"); 
+        },  args... ); size += perr("\033[0m"); 
         return size;
     }
 

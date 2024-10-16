@@ -303,10 +303,10 @@ namespace nodepp { namespace _poll_ {
     GENERATOR( poll ){ public:
 
         template< class V, class T, class U > 
-        gnEmit( V cli, T self, U cb ){
-            if( cli.is_closed() ){ return -1; }
+        gnEmit( V ctx, T self, U cb ){
+            if( ctx.is_closed() ){ return -1; }
         gnStart coNext;
-            self->onSocket.emit( cli ); cb(cli);
+            self->onSocket.emit( ctx ); cb(ctx);
         gnStop
         }
 

@@ -31,15 +31,19 @@ Nodepp Port for Emscripten
 
 ```bash
 em++ -o www/index.html main.cpp \
-     -I ./include -pthread \
-     -s PROXY_POSIX_SOCKETS \
-     -s PTHREAD_POOL_SIZE=8 \
-     -s ASYNCIFY=1 \
-     -s WASM=1 \
-   #--embed-file ./assets \
+     -I ./include -pthread -lwebsocket.js \
+     -s WEBSOCKET_SUBPROTOCOL=1 \
+     -s PTHREAD_POOL_SIZE=8     \
+     -s WEBSOCKET_URL=1         \
+     -s USE_PTHREADS=1          \
+     -s ASYNCIFY=1              \
+     -s FETCH=1                 \
+     -s WASM=1                  \
+    --embed-file ./www/index.html
 ```
 
-## Hello world
+## Examples
+### Hello world
 ```cpp
 #include <nodepp/nodepp.h>
 
@@ -50,10 +54,67 @@ void onMain() {
 }
 ```
 
+### HTTP Client
+```cpp
+#include <nodepp/nodepp.h>
+#include <nodepp/fetch.h>
+
+using namespace nodepp;
+
+void onMain() {
+
+    fetch_t args;
+            args.url = "https://localhost:8000/";
+
+    fetch::add( args )
+
+    .then([=]( fetch_t res ){
+        console::log( "->", res.status );
+        console::log( res.headers["Content-Length"] );
+    })
+
+    .fail([=]( except_t rej ){
+        console::log( rej );
+    });
+
+}
+```
+
+### Websocket Client
+```cpp
+#include <nodepp/nodepp.h>
+#include <nodepp/ws.h>
+
+using namespace nodepp;
+
+void onMain() {
+
+    auto srv = ws::connect( "wss://localhost:8000" );
+    
+    srv.onConnect([=]( ws_t cli ){
+
+        cli.onData([]( string_t data ){
+            console::log( data );
+        });
+
+        cli.onClose([](){
+            console::log( "done" );
+        });
+
+    });
+
+}
+```
+
 ### More Examples [here](https://github.com/NodeppOficial/Nodepp/tree/main/examples)
 
+## Compatibility
+- 🔗: [NodePP for Window | Linux | Mac | Bsd ](https://github.com/NodeppOficial/nodepp)
+- 🔗: [NodePP for Arduino](https://github.com/NodeppOficial/nodepp-arduino)
+- 🔗: [Nodepp for WASM](https://github.com/NodeppOficial/nodepp-wasm)
+ 
 ## FAQ
-- reddit : [/r/Nodepp/](https://www.reddit.com/r/Nodepp/comments/1eaq1pu/faq_ask_anything_about_nodepp/)
+- 🔗: [/r/Nodepp/](https://www.reddit.com/r/Nodepp/comments/1eaq1pu/faq_ask_anything_about_nodepp/)
   
 ## Contribution
 
