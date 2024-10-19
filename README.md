@@ -1,6 +1,8 @@
 # Nodepp-WASM
 
-Nodepp Port for Emscripten 
+Nodepp is a groundbreaking open-source project that simplifies C++ application development by bridging the gap between the language's raw power and the developer-friendly abstractions of Node.js. By providing a high-level API, Nodepp empowers developers to write C++ code in a familiar, Node.js-inspired style.
+
+One of the standout features of Nodepp is its 100% asynchronous architecture, powered by an internal Event Loop. This design efficiently manages Nodepp’s tasks, enabling you to develop scalable and concurrent applications with minimal code. Experience the power and flexibility of Nodepp as you streamline your development process and create robust applications effortlessly!
 
 ## Dependencies 
 ```bash
@@ -11,10 +13,10 @@ Nodepp Port for Emscripten
 
 ## Features
 
-- 📌: **C++11 | C++14 | C++17 | c++20 | c++23** Compatible
-- 📌: Allows writing **C++** code as if writing in **NodeJS** or **Javascript**
-- 📌: Adds a high-level abstraction layer to simplify **C++** application development
-- 📌: Supports **Coroutines**, which allows running multiple tasks concurrently on a single thread
+- 📌: **Node.js-like API:** Write C++ code in a syntax and structure similar to Node.js, making it easier to learn and use.
+- 📌: **High-performance:** Leverage the speed and efficiency of C++ for demanding applications.
+- 📌: **Scalability:** Build applications that can handle large workloads and grow with your needs.
+- 📌: **Open-source:** Contribute to the project's development and customize it to your specific requirements.
 
 ## Bateries Included
 
