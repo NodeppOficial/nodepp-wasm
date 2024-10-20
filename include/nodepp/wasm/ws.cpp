@@ -95,7 +95,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
 
     string_t read( ulong /*unused*/ ) const noexcept { return nullptr; }
 
-    int send( string_t msg ) const noexcept {
+    int write( string_t msg ) const noexcept {
         if( is_closed() || msg.empty() ){ return -1; }
         obj->feof = emscripten_websocket_send_binary( obj->fd, msg.get(), msg.size() );
         if( obj->feof <= 0 ){ close(); return -1; } return obj->feof;

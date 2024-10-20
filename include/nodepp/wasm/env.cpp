@@ -10,7 +10,6 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #pragma once
-#include <unistd.h>
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -25,10 +24,10 @@ namespace nodepp { namespace {
     }
 
     string_t GET( const string_t& name ){ 
-        char res [1024]; auto size = EM_ASM_INT({
+        char res [UNBFF_SIZE]; auto size = EM_ASM_INT({
             stringToUTF8( window[key], $0, $1 );
             return str.length; 
-        }, res, 1024 ); return { res, 1024 };
+        }, res, UNBFF_SIZE ); return { res, size };
     } 
 
     int DEL( const string_t& name ){ 
