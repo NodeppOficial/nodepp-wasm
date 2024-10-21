@@ -32,7 +32,7 @@ namespace nodepp { namespace process {
 
     ulong now(){ return millis(); }
 
-    void yield(){ delay(0); }
+    void yield(){ delay(TIMEOUT); }
 
 }}
 
