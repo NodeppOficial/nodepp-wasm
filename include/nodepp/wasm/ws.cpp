@@ -33,7 +33,7 @@ protected:
 
     struct NODE {
         int     fd =-1;
-        int   feof = 1;
+        int   feof = 0;
         bool state = 0;
     };  ptr_t<NODE> obj;
 
@@ -55,6 +55,12 @@ public: ws_t() noexcept : obj( new NODE() ){}
     /*─······································································─*/
 
     ws_t( const string_t& url ) noexcept : obj( new NODE() ) {
+
+        if( !emscripten_websocket_is_supported() ){ 
+            _EERROR(onError,"WS not Supported");
+            return;
+        }
+
         EmscriptenWebSocketCreateAttributes attr;
         memset( &attr, 0, sizeof( attr ) );
         attr.url       = url.c_str();
@@ -73,8 +79,8 @@ public: ws_t() noexcept : obj( new NODE() ){}
     /*─······································································─*/
     
     void  close() const noexcept { 
-        if(obj->state == 0) { return; } 
-        obj->state = 0; onDrain.emit();  
+        if( obj->state == 0 ){ return; } 
+            obj->state =  0; onDrain.emit(); free();
     }
     
     /*─······································································─*/
@@ -87,9 +93,9 @@ public: ws_t() noexcept : obj( new NODE() ){}
     
     /*─······································································─*/
 
-    bool is_closed() const noexcept { return obj->fd <= 0 || obj->feof <= 0; }
+    bool is_closed() const noexcept { return obj->fd <= 0 || obj->feof != 0; }
 
-    bool is_available() const noexcept { return obj->fd > 0 && obj->feof > 0; }
+    bool is_available() const noexcept { return obj->fd > 0 && obj->feof != 0; }
     
     /*─······································································─*/
 
@@ -98,7 +104,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
     int write( string_t msg ) const noexcept {
         if( is_closed() || msg.empty() ){ return -1; }
         obj->feof = emscripten_websocket_send_binary( obj->fd, msg.get(), msg.size() );
-        if( obj->feof <= 0 ){ close(); return -1; } return obj->feof;
+        if( obj->feof != 0 ){ close(); return -1; } return msg.size();
     }
 
 
