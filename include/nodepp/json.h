@@ -51,10 +51,11 @@ protected:
     }
 
     object_t get_data( const string_t& data ) const noexcept {
-        ulong x=0; while( data[x]==' ' ){ x++; }
-          if( data[x] == '"' ){ return regex::match(data,"\"[^\"]+\"").slice(1,-1); }
-        elif( data[x] == '{' ){ return parse( data ); }
-        elif( data[x] == '[' ){ return parse( data ); }
+        ulong x=0; while( x < data.size() && data[x]==' ' ){ x++; }
+          if( data.empty() || data[x] == ',' ){ return nullptr; }
+        elif( data[x] == '"'     ){ return regex::match(data,"\"[^\"]+\"").slice(1,-1); }
+        elif( data[x] == '{'     ){ return parse( data ); }
+        elif( data[x] == '['     ){ return parse( data ); }
         elif( data.find("false") ){ return (bool) 0; }
         elif( data.find("true")  ){ return (bool) 1; }
         elif( data.find('.')     ){ return string::to_float(data); }
@@ -98,6 +99,7 @@ protected:
 public: json_t () noexcept = default;
 
     object_t parse( const string_t& str ) const {
+        if( str.empty() ){ return nullptr; }
         ulong x = 0; string_t data; process::next(); do {
 
             if ( str[x] == '[' || str[x] == '{' || str[x] == '"' ){
@@ -123,7 +125,8 @@ public: json_t () noexcept = default;
     }
 
     string_t stringify( const object_t& obj ) const { 
-    string_t result; process::next();
+        if( !obj.has_value() ){ return nullptr; }
+        string_t result; process::next();
 
         if( obj.get_type_id() == 20 ){
             result.push('{');
