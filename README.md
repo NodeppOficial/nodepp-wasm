@@ -40,8 +40,7 @@ em++ -o www/index.html main.cpp \
      -s USE_PTHREADS=1          \
      -s ASYNCIFY=1              \
      -s FETCH=1                 \
-     -s WASM=1                  \
-    --embed-file ./www/index.html
+     -s WASM=1
 ```
 
 ## Examples
