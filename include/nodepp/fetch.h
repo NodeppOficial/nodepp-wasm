@@ -9,18 +9,16 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_DNS
-#define NODEPP_DNS
+#ifndef NODEPP_FS
+#define NODEPP_FS
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#if _KERNEL == NODEPP_KERNEL_WASM
-    #include "url.h"
-    #include "socket.h"
-    #include "wasm/dns.cpp"
-#else
-    #error "This OS Does not support dns.h"
-#endif
+#include "any.h"
+#include "url.h"
+#include "path.h"
+#include "promise.h"
+#include "wasm/fetch.cpp"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

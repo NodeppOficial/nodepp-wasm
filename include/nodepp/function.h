@@ -29,6 +29,7 @@ public:
     bool has_value() const noexcept { return func_ptr.has_value(); }
     ulong    count() const noexcept { return func_ptr.count(); }
     bool     empty() const noexcept { return func_ptr.null(); }
+    void      free() const noexcept { func_ptr.free(); }
     
     /*─······································································─*/
 
@@ -63,6 +64,7 @@ private:
     /*─······································································─*/
     
     ptr_t<func_base> func_ptr;
+    
 };}
 
 /*────────────────────────────────────────────────────────────────────────────*/

@@ -15,18 +15,12 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 namespace nodepp { namespace process {
+
+    ulong seconds(){ return emscripten_get_now() * 1000; }
+
+    ulong micros(){ return emscripten_get_now() / 1000; }
     
-    ulong millis(){
-        return emscripten_get_now();
-    }
-
-    ulong micros(){ 
-        return emscripten_get_now() / 1000;
-    }
-
-    ulong seconds(){
-        return emscripten_get_now() * 1000;
-    }
+    ulong millis(){ return emscripten_get_now(); }
 
 }}
 
@@ -38,7 +32,7 @@ namespace nodepp { namespace process {
 
     ulong now(){ return millis(); }
 
-    void yield(){ delay(0); }
+    void yield(){ delay(TIMEOUT); }
 
 }}
 

@@ -20,9 +20,9 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define _EERROR( EV, ... ) if ( EV.empty() ){ console::error(__VA_ARGS__); } \
-                           else EV.emit( except_t(__VA_ARGS__) );
-#define _ERROR( ... )      throw except_t (__VA_ARGS__);
+#define _EERROR( EV, ... ) if  ( EV.empty() ){ console::error(__VA_ARGS__); } \
+                           else{ EV.emit( except_t(__VA_ARGS__) ); }
+#define _ERROR( ... )      throw except_t (__VA_ARGS__)
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -55,10 +55,25 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
+#define CHUNK_TB( VALUE ) ( 1024 * 1024 * 1024 * 1024 * VALUE )
+#define CHUNK_GB( VALUE ) ( 1024 * 1024 * 1024 * VALUE )
+#define CHUNK_MB( VALUE ) ( 1024 * 1024 * VALUE )
+#define CHUNK_KB( VALUE ) ( 1024 * VALUE )
+#define CHUNK_B ( VALUE ) ( VALUE )
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
 #define GENERATOR(NAME) struct NAME : public generator_t
 #define gnStart { switch(_state_) { case 0:;
-#define gnStop  } _state_ = 0; return -1; }
-#define gnEmit    int operator()
+#define coEmit  int operator()
+#define gnStop  coStop
+#define gnEmit  coEmit
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#define forEach( X, ITEM ) for( auto& X : ITEM )
+#define forEver() for (;;)
+#define elif else if
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -71,46 +86,50 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define CHUNK_TB( VALUE ) ( 1024 * 1024 * 1024 * 1024 * VALUE )
-#define CHUNK_GB( VALUE ) ( 1024 * 1024 * 1024 * VALUE )
-#define CHUNK_MB( VALUE ) ( 1024 * 1024 * VALUE )
-#define CHUNK_KB( VALUE ) ( 1024 * VALUE )
-#define CHUNK_B ( VALUE ) ( VALUE )
+#define CHUNK_SIZE 65536
+#define UNBFF_SIZE 4096
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define MAX_SOCKET SOMAXCONN
-#define CHUNK_SIZE 65536
-#define UNBFF_SIZE 4096
-#define TIMEOUT    1
+#ifndef MAX_WORKERS
+#define MAX_WORKERS 1024
+#endif
+
+#ifndef MAX_EVENTS
+#define MAX_EVENTS  1024
+#endif
+
+#ifndef MAX_FILENO
+#define MAX_FILENO  1024
+#endif
+
+#ifndef MAX_TASKS
+#define MAX_TASKS   1024
+#endif
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#ifndef TIMEOUT
+#define TIMEOUT 1
+#endif
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #define typeof(DATA) (string_t){ typeid( DATA ).name() }
-
 struct generator_t { protected: int _state_ = 0; };
 
 #define ullong  unsigned long long int
 #define ulong   unsigned long int
+#define uchar   unsigned char
 #define llong   long long int
 #define ldouble long double
-
-#define ushort  unsigned short
-#define uchar   unsigned char
-#define uint    unsigned int
 #define wchar   wchar_t
 
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define forEach( ITEM, CB ) for( auto& x : ITEM ){ CB( x ); }
-#define forEver() for (;;)
-#define elif else if
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define NODEPP_KERNEL_WASM 1
-
-#define _KERNEL NODEPP_KERNEL_WASM
+#ifndef _SYS_TYPES_H_
+#define _SYS_TYPES_H_
+#define ushort  unsigned short
+#define uint    unsigned int
+#endif
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
