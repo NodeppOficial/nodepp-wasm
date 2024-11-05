@@ -10,6 +10,7 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #pragma once
+#include <nodepp/debug.h>
 #include <emscripten/websocket.h>
 
 /*────────────────────────────────────────────────────────────────────────────*/
@@ -32,9 +33,11 @@ namespace nodepp { class ws_t {
 protected:
 
     struct NODE {
-        int     fd =-1;
-        int   feof = 0;
-        bool state = 0;
+        ulong timeout=0;
+        ushort wait = 0;
+        int      fd =-1;
+        int    feof = 0;
+        bool  state = 0;
     };  ptr_t<NODE> obj;
 
 public: ws_t() noexcept : obj( new NODE() ){}
@@ -47,10 +50,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
     
     /*─······································································─*/
     
-    virtual ~ws_t() noexcept {
-        if( obj.count() > 1 ){ return; } 
-        if( obj->state == 0 ){ return; } free();
-    }
+    virtual ~ws_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
     
     /*─······································································─*/
 
@@ -58,7 +58,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
 
         if( !emscripten_websocket_is_supported() ){ 
             _EERROR(onError,"WS not Supported"); return;
-        }
+        }   
 
         EmscriptenWebSocketCreateAttributes attr;
         memset( &attr, 0, sizeof( attr ) );
@@ -68,43 +68,66 @@ public: ws_t() noexcept : obj( new NODE() ){}
 
         obj->fd = emscripten_websocket_new( &attr ); if( obj->fd <= 0 ){ 
             _EERROR(onError,"Couldn't connect to the server"); return;
-        }   auto self = type::bind( this );
-
-        process::add([=](){ 
+        }
+        
+        obj->timeout = process::millis() + 1000;
+        obj->state   = 1;
+        auto self    = type::bind( this );
+        
+        process::add([=](){
         coStart
-            while( self->is_closed() ){ coDelay(1000); if( self->is_closed() ){ 
-                _EERROR(self->onError,"Couldn't connect to the server"); coEnd; 
-            }}  while(!self->is_closed() ){ coNext; }
-        coStop });
 
-        emscripten_websocket_set_onopen_callback( obj->fd, &self, _ws_::WS_EVENT_OPEN );
-        emscripten_websocket_set_onclose_callback( obj->fd, &self, _ws_::WS_EVENT_CLOSE );
-        emscripten_websocket_set_onerror_callback( obj->fd, &self, _ws_::WS_EVENT_ERROR );
-        emscripten_websocket_set_onmessage_callback( obj->fd, &self, _ws_::WS_EVENT_MESSAGE );
+          //emscripten_websocket_set_onopen_callback   ( self->obj->fd, &self, _ws_::WS_EVENT_OPEN    );
+            emscripten_websocket_set_onclose_callback  ( self->obj->fd, &self, _ws_::WS_EVENT_CLOSE   );
+            emscripten_websocket_set_onerror_callback  ( self->obj->fd, &self, _ws_::WS_EVENT_ERROR   );
+            emscripten_websocket_set_onmessage_callback( self->obj->fd, &self, _ws_::WS_EVENT_MESSAGE );
+
+            while( self->_connect()==-2 ){ coNext; } if ( self->is_closed() ){
+                _EERROR( self->onError, "Couldn't connect to the server" ); coEnd;
+            }   self->onConnect.emit( *self ); while( !self->is_closed() ){ coNext; }
+
+        coStop
+        });
+
     }
 
     /*─······································································─*/
-
-    void resume() const noexcept { obj->state = 1; }
     
-    void  close() const noexcept { 
+    int _connect() const noexcept {
+        if( process::millis() > obj->timeout ){ obj->wait=3; return -1; }
+            emscripten_websocket_get_ready_state( obj->fd, &obj->wait );
+        if( obj->wait == 0 ){ return -2; } return obj->wait>1? -1 : 0;
+    }
+    
+    int connect() const noexcept { int c = 0;
+        while( (c=_connect())==-2 ){ process::next(); }
+        return c;
+    }
+
+    /*─······································································─*/
+    
+    void close() const noexcept { if( is_available() ){ 
+        emscripten_websocket_delete( obj->fd );
+        onDrain.emit(); free();
+    }}
+    
+    /*─······································································─*/
+    
+    virtual void free() const noexcept { 
         if( obj->state == 0 ){ return; } 
-            obj->state =  0; onDrain.emit(); free();
+            obj->state  = 0; onClose.emit();
     }
-    
-    /*─······································································─*/
-    
-    virtual void free() const noexcept {
-        if( obj.count() > 1 || is_closed() ){ return; }
-        emscripten_websocket_close( obj->fd, 1000, "Closing connection" );
-        emscripten_websocket_delete( obj->fd ); obj->state = 0; onClose.emit();
-    }
-    
+
     /*─······································································─*/
 
     bool is_available() const noexcept { return !is_closed(); }
 
-    bool is_closed() const noexcept { return obj->fd <= 0 || obj->feof != 0 || obj->state == 0; }
+    int get_fd()        const noexcept { return obj->fd; }
+
+    bool is_closed()    const noexcept { 
+        return obj->fd    <= 0 || obj->feof != 0 || 
+               obj->state == 0 || obj->wait >  1 ; 
+    }
     
     /*─······································································─*/
 
@@ -112,7 +135,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
 
     int write( string_t msg ) const noexcept {
         if( is_closed() || msg.empty() ){ return -1; }
-        obj->feof = emscripten_websocket_send_binary( obj->fd, msg.get(), msg.size() );
+            obj->feof  = emscripten_websocket_send_binary( obj->fd, msg.get(), msg.size() );
         if( obj->feof != 0 ){ close(); return -1; } return msg.size();
     }
 
@@ -122,30 +145,24 @@ public: ws_t() noexcept : obj( new NODE() ){}
 
 namespace nodepp { namespace _ws_ {
 
-    int WS_EVENT_MESSAGE( int /*unused*/, const EmscriptenWebSocketMessageEvent* ev, void* userData ) {
-        string_t message ( (char*) ev->data, ev->numBytes );
-        auto data = type::cast<ws_t>( userData );
-        data->onData.emit( message );
-        return ev->socket;
-    }
-
-    int WS_EVENT_CLOSE( int /*unused*/, const EmscriptenWebSocketCloseEvent* ev, void* userData ) {
-        auto data = type::cast<ws_t>( userData ); 
+    EMSCRIPTEN_RESULT WS_EVENT_CLOSE( int /*unused*/, const EmscriptenWebSocketCloseEvent* /*unused*/, void* userData ) {
+        if( userData == nullptr ){ return EM_FALSE; } auto data = type::cast<ws_t>( userData ); 
+        if( data->is_closed()   ){ return EM_FALSE; } 
         data->onData.clear(); data->close(); 
-        return ev->socket;
+        return EM_FALSE;
     }
 
-    int WS_EVENT_ERROR( int /*unused*/, const EmscriptenWebSocketErrorEvent* ev, void* userData ) {
-        string_t error = "something went wrong";
-        auto data = type::cast<ws_t>( userData );
-        data->onError.emit( except_t( error ) );
-        data->close(); return ev->socket;
+    EMSCRIPTEN_RESULT WS_EVENT_ERROR( int /*unused*/, const EmscriptenWebSocketErrorEvent* /*unused*/, void* userData ) {
+        if( userData == nullptr ){ return EM_FALSE; } auto data = type::cast<ws_t>( userData ); 
+        if( data->is_closed()   ){ return EM_FALSE; }
+        data->onError.emit( except_t( "something went wrong" ) );
+        data->onData.clear(); data->close(); return EM_FALSE;
     }
 
-    int WS_EVENT_OPEN( int /*unused*/, const EmscriptenWebSocketOpenEvent* ev, void* userData ) {
-        auto data = type::cast<ws_t>( userData ); data->resume();
-        data->onConnect.emit( *data );
-        return ev->socket;
+    EMSCRIPTEN_RESULT WS_EVENT_MESSAGE( int /*unused*/, const EmscriptenWebSocketMessageEvent* ev, void* userData ) {
+        if( userData == nullptr ){ return EM_FALSE; } auto data = type::cast<ws_t>( userData );
+        if( data->is_closed()   ){ return EM_FALSE; }
+        data->onData.emit( string_t( (char*)ev->data, ev->numBytes ) ); return EM_TRUE;
     }
 
 }}
