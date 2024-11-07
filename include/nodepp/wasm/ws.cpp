@@ -95,8 +95,6 @@ public: ws_t() noexcept : obj( new NODE() ){}
                if( self->obj->state & 8 ){ self->onDrain.emit(); break; }
                    self->obj->state &=0; coNext; 
             }
-
-            self->onClose.emit(); coDelay(1000);
             
             do {
             auto x = user.first(); while( x != nullptr ){
@@ -107,6 +105,8 @@ public: ws_t() noexcept : obj( new NODE() ){}
                   { user.erase( x ); break; } x = y;
 
             }} while(0);
+
+            coDelay(100); self->onClose.emit();
 
         coStop
         });
