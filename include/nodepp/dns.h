@@ -9,36 +9,15 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#pragma once
-#include <emscripten/emscripten.h>
+#ifndef NODEPP_DNS
+#define NODEPP_DNS
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { namespace process {
-    
-    ulong _time_ = 0;
-
-    ulong millis(){ return _time_; }
-
-    ulong micros(){ return _time_ / 1000; }
-
-    ulong seconds(){ return _time_ * 1000; }
-
-}}
+#include "url.h"
+#include "socket.h"
+#include "wasm/dns.cpp"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { namespace process {
-
-    void  delay( ulong time ){ emscripten_sleep( time ); }
-
-    ulong now(){ return millis(); }
-
-    void yield(){ 
-        _time_ = emscripten_get_now(); 
-        delay(TIMEOUT);
-    }
-
-}}
-
-/*────────────────────────────────────────────────────────────────────────────*/
+#endif

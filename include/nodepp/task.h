@@ -187,7 +187,6 @@ namespace nodepp { namespace process {
     /*─······································································─*/
 
     int next(){ 
-        static int x = 0;
     coStart
 
         if( !process::task::empty() ){ process::task::next(); coNext; }
