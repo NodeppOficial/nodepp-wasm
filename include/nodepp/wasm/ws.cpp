@@ -65,7 +65,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
     
     /*─······································································─*/
     
-    virtual ~ws_t() noexcept { if( obj.count() > 1 ) { return; } free(); }
+    virtual ~ws_t() noexcept { if( obj.count() > 1 ) { return; } close(); }
     
     /*─······································································─*/
 
@@ -95,8 +95,6 @@ public: ws_t() noexcept : obj( new NODE() ){}
                if( self->obj->state & 8 ){ self->onDrain.emit(); break; }
                    self->obj->state &=0; coNext; 
             }
-
-            coDelay(100); self->onClose.emit();
             
             do {
             auto x = user.first(); while( x != nullptr ){
@@ -106,7 +104,7 @@ public: ws_t() noexcept : obj( new NODE() ){}
                 if( z->get_fd() == self->obj->fd )
                   { user.erase( x ); break; } x = y;
 
-            }} while(0);
+            }} while(0); self->onClose.emit(); 
 
         coStop
         });
