@@ -30,9 +30,12 @@ namespace nodepp { namespace process {
 
 namespace nodepp { namespace process {
 
-    void  delay( ulong time ){ emscripten_sleep( time ); }
-
     ulong now(){ return millis(); }
+
+    void delay( ulong time ){ 
+        if( time == 0 ){ return; }
+        emscripten_sleep( time );
+    }
 
     void yield(){ 
         _time_ = emscripten_get_now(); 
