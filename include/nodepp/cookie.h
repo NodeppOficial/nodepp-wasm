@@ -9,18 +9,44 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_WORKER
-#define NODEPP_WORKER
+#ifndef NODEPP_COOKIE
+#define NODEPP_COOKIE
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#include "wasm/worker.cpp"
+#include "regex.h"
+#include "map.h"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { namespace worker { template< class V, class... T >
-    worker_t add( V cb, const T&... args ){ worker_t wrk( cb, args... ); wrk.run(); return wrk; }
-}}
+namespace nodepp {
+
+    using cookie_t = map_t< string_t, string_t >;
+
+    namespace cookie {
+
+        cookie_t parse( string_t data ){
+            if ( data.empty() ){ return cookie_t(); } cookie_t res;
+                 auto args = string::split( data, ';' );
+            for( auto x : args ){ 
+                 auto y = regex::search( x,"[^=]+");
+                 if ( y == nullptr ){ continue; }
+                 auto name = regex::replace( x.slice(y[0],y[1]), "\\s+", "" );
+                 res[ name ] = x.slice(y[1]+1);
+            }    return res;
+        }
+        
+        /*─······································································─*/
+        
+        string_t format( const cookie_t& data ){ 
+            array_t<string_t> result; for( auto x:data.data() ) 
+                   result.push( x.first + "=" + x.second );
+            return string::format("%s",result.join(";").c_str());
+        }
+
+    }
+
+}
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

@@ -14,15 +14,16 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
+#define rand_range( A, B ) clamp( rand()%B, A, B )
 template< class T > T   min( const T& min, const T& max ){ return min < max ? min : max; }
 template< class T > T   max( const T& min, const T& max ){ return max > min ? max : min; }
 template< class T > T clamp( const T& val, const T& _min, const T& _max ){ return max( _min, min( _max, val ) ); }
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define _EERROR( EV, ... ) if ( EV.empty() ){ console::error(__VA_ARGS__); } \
-                           else EV.emit( except_t(__VA_ARGS__) );
-#define _ERROR( ... )      throw except_t (__VA_ARGS__);
+#define _EERROR( EV, ... ) if  ( EV.empty() ){ console::error(__VA_ARGS__); } \
+                           else{ EV.emit( except_t(__VA_ARGS__) ); }
+#define _ERROR( ... )      throw except_t (__VA_ARGS__)
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -55,22 +56,6 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define GENERATOR(NAME) struct NAME : public generator_t
-#define gnStart { switch(_state_) { case 0:;
-#define gnStop  } _state_ = 0; return -1; }
-#define gnEmit    int operator()
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define _FUNC_  __PRETTY_FUNCTION__
-#define _NAME_  __FUNCTION__
-#define _DATE_  __DATE__
-#define _FILE_  __FILE__
-#define _LINE_  __LINE__
-#define _TIME_  __TIME__
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
 #define CHUNK_TB( VALUE ) ( 1024 * 1024 * 1024 * 1024 * VALUE )
 #define CHUNK_GB( VALUE ) ( 1024 * 1024 * 1024 * VALUE )
 #define CHUNK_MB( VALUE ) ( 1024 * 1024 * VALUE )
@@ -79,38 +64,75 @@ template< class T > T clamp( const T& val, const T& _min, const T& _max ){ retur
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define MAX_SOCKET SOMAXCONN
-#define CHUNK_SIZE 65536
-#define UNBFF_SIZE 4096
-#define TIMEOUT    1
+#define GENERATOR(NAME) struct NAME : public generator_t
+#define gnStart { switch(_state_) { case 0:;
+#define coEmit  int operator()
+#define gnStop  coStop
+#define gnEmit  coEmit
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define typeof(DATA) (string_t){ typeid( DATA ).name() }
-
-struct generator_t { protected: int _state_ = 0; };
-
-#define ullong  unsigned long long int
-#define ulong   unsigned long int
-#define llong   long long int
-#define ldouble long double
-
-#define ushort  unsigned short
-#define uchar   unsigned char
-#define uint    unsigned int
-#define wchar   wchar_t
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-#define forEach( ITEM, CB ) for( auto& x : ITEM ){ CB( x ); }
+#define forEach( X, ITEM ) for( auto& X : ITEM )
 #define forEver() for (;;)
 #define elif else if
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#define NODEPP_KERNEL_WASM 1
+#define _JSON_(...) json::parse(_STRING_(__VA_ARGS__))
+#define _FUNC_  __PRETTY_FUNCTION__
+#define _STRING_(...) #__VA_ARGS__
+#define _NAME_  __FUNCTION__
+#define _DATE_  __DATE__
+#define _FILE_  __FILE__
+#define _LINE_  __LINE__
+#define _TIME_  __TIME__
 
-#define _KERNEL NODEPP_KERNEL_WASM
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#define CHUNK_SIZE 65536
+#define UNBFF_SIZE 4096
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#ifndef MAX_WORKERS
+#define MAX_WORKERS 1024
+#endif
+
+#ifndef MAX_EVENTS
+#define MAX_EVENTS  1024
+#endif
+
+#ifndef MAX_FILENO
+#define MAX_FILENO  1024
+#endif
+
+#ifndef MAX_TASKS
+#define MAX_TASKS   1024
+#endif
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#ifndef TIMEOUT
+#define TIMEOUT 1
+#endif
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#define typeof(DATA) (string_t){ typeid( DATA ).name() }
+struct generator_t { protected: int _state_ = 0; };
+
+#define ullong  unsigned long long int
+#define ulong   unsigned long int
+#define uchar   unsigned char
+#define llong   long long int
+#define ldouble long double
+#define wchar   wchar_t
+
+#ifndef _SYS_TYPES_H_
+#define _SYS_TYPES_H_
+#define ushort  unsigned short
+#define uint    unsigned int
+#endif
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
