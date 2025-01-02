@@ -12,7 +12,7 @@
 #ifndef NODEPP_POLL
 #define NODEPP_POLL
 
-#include "event.h"
+#include "wait.h"
 #include "wasm/poll.cpp"
 
 #endif
