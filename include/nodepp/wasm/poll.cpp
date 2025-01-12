@@ -11,11 +11,9 @@
 
 #pragma once
 
-/*────────────────────────────────────────────────────────────────────────────*/
-
 namespace nodepp {
 
-class poll_t : public generator_t {
+class poll_t {
 protected:
 
     struct POLLFD { int fd; int md; };
@@ -27,9 +25,9 @@ protected:
 
 public:
 
-    event_t<int>    onWrite;
-    event_t<int>    onError;
-    event_t<int>    onRead;
+    wait_t<int>    onWrite;
+    wait_t<int>    onError;
+    wait_t<int>    onRead;
 
 public: poll_t() noexcept : obj( new NODE() ) {}
 
@@ -47,9 +45,11 @@ public: poll_t() noexcept : obj( new NODE() ) {}
 
     /*─······································································─*/
 
+    int next () noexcept { return emit(); }
+
     int emit () noexcept { 
-        static ulong s = 0; static POLLFD x;
-    gnStart 
+        static POLLFD x;
+    coStart 
     
         if( obj->ev.empty() ){ coEnd; }
 
@@ -59,18 +59,14 @@ public: poll_t() noexcept : obj( new NODE() ) {}
           else             { obj->ev.erase(obj->ev.get()); onError.emit(x.fd); obj->ls={{-1, x.fd }}; coNext; }
         }
 
-    gnStop
+    coStop
     };
 
     /*─······································································─*/
 
-    void push_write( const int& fd ) noexcept { 
-	     obj->ev.push({ fd, 1 }); 
-    }
+    void push_write( const int& fd ) noexcept { obj->ev.push({ fd, 1 }); }
 
-    void push_read( const int& fd ) noexcept { 
-         obj->ev.push({ fd, 0 }); 
-    }
+    void push_read ( const int& fd ) noexcept { obj->ev.push({ fd, 0 }); }
 
 };}
 

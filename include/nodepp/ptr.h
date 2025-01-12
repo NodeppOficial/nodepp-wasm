@@ -65,8 +65,18 @@ public:
     bool operator!=( T* value )   const noexcept { return this->value_!=value; }
     
     /*─······································································─*/
+    
+    void fill( const T& c ) const noexcept {
+        if( size() != 0 ) for( auto x=begin(); x!=end(); x++ ) (*x) = c;
+        else              *value_ = c;
+    }
+    
+    /*─······································································─*/
 
-    T& operator[]( ulong i ) const noexcept { return value_[i]; }
+    T& operator[]( ulong i ) const noexcept { 
+        return size()==0 ? value_[i] : 
+               value_[ i%size() ]; 
+    }
     
     /*─······································································─*/
 
@@ -83,20 +93,14 @@ public:
     }
     
     /*─······································································─*/
-    
-    void fill( const T& c ) const noexcept {
-        if( size() != 0 ) for( auto x=begin(); x!=end(); x++ ) (*x) = c;
-        else              *value_ = c;
-    }
-    
-    /*─······································································─*/
 
     ptr_t copy() const noexcept {
           if( count() > 0 && size() == 0 )
             { return new T( *value_ ); }
         elif( count() > 0 && size() > 0 ){
-            auto n_buffer = ptr_t<T>( size() ); ulong n=0; 
-            for( auto x : *this ){ n_buffer[n]=x; n++; } return n_buffer;
+            auto n_buffer = ptr_t<T>( size() );
+            memcpy( &n_buffer, value_, size() );
+            return n_buffer;
         }   return nullptr;
     }
     
@@ -106,8 +110,8 @@ public:
         if( n == 0 ){ 
             length_= new ulong( 0 ); 
             count_ = new ulong( 1 );
-            value_ = new T( c );
-        return; } else {
+            value_ = new T(c); return; 
+        } else {
             length_= new ulong( n ); 
             count_ = new ulong( 1 );
             value_ = new T[n];
