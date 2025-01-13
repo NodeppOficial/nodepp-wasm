@@ -25,9 +25,10 @@ protected:
 
 public:
 
-    wait_t<int>    onWrite;
-    wait_t<int>    onError;
-    wait_t<int>    onRead;
+    wait_t<ptr_t<int>> onEvent;
+    wait_t<int>        onWrite;
+    wait_t<int>        onError;
+    wait_t<int>        onRead;
 
 public: poll_t() noexcept : obj( new NODE() ) {}
 
@@ -49,14 +50,14 @@ public: poll_t() noexcept : obj( new NODE() ) {}
 
     int emit () noexcept { 
         static POLLFD x;
-    coStart 
+    coStart
     
         if( obj->ev.empty() ){ coEnd; }
 
         while ( obj->ev.next() ) { x=obj->ev.get()->data;
-            if( x.md == 1 ){ obj->ev.erase(obj->ev.get()); onWrite.emit(x.fd); obj->ls={{ 1, x.fd }}; coNext; }
-          elif( x.md == 0 ){ obj->ev.erase(obj->ev.get());  onRead.emit(x.fd); obj->ls={{ 0, x.fd }}; coNext; }
-          else             { obj->ev.erase(obj->ev.get()); onError.emit(x.fd); obj->ls={{-1, x.fd }}; coNext; }
+            if( x.md == 1 ){ obj->ev.erase(obj->ev.get()); onWrite.emit(x.fd); obj->ls={{ 1, x.fd }}; onEvent.emit(obj->ls); coNext; }
+          elif( x.md == 0 ){ obj->ev.erase(obj->ev.get());  onRead.emit(x.fd); obj->ls={{ 0, x.fd }}; onEvent.emit(obj->ls); coNext; }
+          else             { obj->ev.erase(obj->ev.get()); onError.emit(x.fd); obj->ls={{-1, x.fd }}; onEvent.emit(obj->ls); coNext; }
         }
 
     coStop
@@ -64,9 +65,19 @@ public: poll_t() noexcept : obj( new NODE() ) {}
 
     /*─······································································─*/
 
-    void push_write( const int& fd ) noexcept { obj->ev.push({ fd, 1 }); }
+    bool push_write( const int& fd ) noexcept { 
+         auto n=obj->ev.first(); while( n==nullptr ){ 
+            if( n->data.fd==fd ) { return false; } 
+                n = n->next;
+         }  obj->ev.push({ fd, 1 }); return true;
+    }
 
-    void push_read ( const int& fd ) noexcept { obj->ev.push({ fd, 0 }); }
+    bool push_read( const int& fd ) noexcept { 
+         auto n=obj->ev.first(); while( n==nullptr ){ 
+            if( n->data.fd==fd ) { return false; } 
+                n = n->next;
+         }  obj->ev.push({ fd, 0 }); return true;
+    }
 
 };}
 

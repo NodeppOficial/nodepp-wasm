@@ -40,10 +40,7 @@ public: file_t() noexcept {}
     
     /*─······································································─*/
     
-    virtual ~file_t() noexcept {
-        if( obj.count() > 1 ){ return; } 
-        if( obj->state ==-2 ){ return; } free();
-    }
+    virtual ~file_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
     
     /*─······································································─*/
 
@@ -112,8 +109,8 @@ public: file_t() noexcept {}
     
     virtual void free() const noexcept {
         if( obj->state == -3 && obj.count() > 1 ){ resume(); return; }
-        if( obj->state == -2 ){ return; } obj->state = -2;
-        fclose( obj->fd ); close(); onClose.emit();
+        if( obj->state == -2 ){ return; } close(); obj->state = -2;
+        fclose( obj->fd ); onClose.emit();
     }
 
     /*─······································································─*/
