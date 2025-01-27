@@ -9,18 +9,12 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#ifndef NODEPP_SOCKET
-#define NODEPP_SOCKET
+#ifndef NODEPP_ENV
+#define NODEPP_ENV
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#if   _KERNEL == NODEPP_KERNEL_WASM
-    #include "os.h"
-    #include "stream.h"
-    #include "wasm/socket.cpp"
-#else
-    #error "This OS Does not support socket.h"
-#endif
+#include "wasm/env.cpp"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 

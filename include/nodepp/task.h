@@ -26,10 +26,14 @@ namespace task {
 
     bool empty(){ return queue.empty(); }
 
-    void clear( void* address ){ *((bool*)( address )) = 0; }
+    void clear( void* address ){ 
+        if( address == nullptr ){ return; }
+            *((bool*)( address )) = 0; 
+    }
 
     template< class T, class... V >
     void* add( T cb, const V&... arg ){ 
+        if( queue.size() >= MAX_TASKS ){ return nullptr; }
         ptr_t<T>    clb = new T( cb );
         ptr_t<bool> blk = new bool(0);
         ptr_t<bool> out = new bool(1);
@@ -63,10 +67,14 @@ namespace loop {
 
     bool empty(){ return queue.empty(); }
 
-    void clear( void* address ){ *((bool*)( address )) = 0; }
+    void clear( void* address ){ 
+        if( address == nullptr ){ return; }
+            *((bool*)( address )) = 0; 
+    }
 
     template< class T, class... V >
     void* add( T cb, const V&... arg ){ 
+        if( queue.size() >= MAX_TASKS ){ return nullptr; }
         ptr_t<T>    clb = new T( cb );
         ptr_t<bool> blk = new bool(0);
         ptr_t<bool> out = new bool(1);
@@ -100,10 +108,14 @@ namespace poll {
 
     bool empty(){ return queue.empty(); }
 
-    void clear( void* address ){ *((bool*)( address )) = 0; }
+    void clear( void* address ){ 
+        if( address == nullptr ){ return; }
+            *((bool*)( address )) = 0; 
+    }
 
     template< class T, class... V >
     void* add( T cb, const V&... arg ){ 
+        if( queue.size() >= MAX_FILENO ){ return nullptr; }
         ptr_t<T>    clb = new T( cb );
         ptr_t<bool> blk = new bool(0);
         ptr_t<bool> out = new bool(1);
@@ -144,9 +156,9 @@ namespace nodepp { namespace process {
     
     /*─······································································─*/
 
-    void clear( void* address ){
-         if( !address ){ return; }
-         *((bool*)address) = 0;
+    void clear( void* address ){ 
+        if( address == nullptr ){ return; }
+            *((bool*)( address )) = 0; 
     }
     
     /*─······································································─*/
@@ -155,7 +167,7 @@ namespace nodepp { namespace process {
         process::task::empty() && 
         process::poll::empty() && 
         process::loop::empty() && 
-        process::threads < 1 
+        process::threads <= 0 
     );}
 
     /*─······································································─*/
@@ -175,19 +187,13 @@ namespace nodepp { namespace process {
     /*─······································································─*/
 
     int next(){ 
-        static int x = 0;
     coStart
 
-        if( process::size() <= 0 ){ process::delay( TIMEOUT ); coGoto(0); }
-
-        while( x != 0 ){
-        if( !process::task::empty() ){ process::task::next(); coNext; x--; }
-        if( !process::loop::empty() ){ process::loop::next(); coNext; x--; }
-        if( !process::poll::empty() ){ process::poll::next(); coNext; x--; }   
-        }   
-            
-        x = process::size(); process::delay( TIMEOUT );
-
+        if( !process::task::empty() ){ process::task::next(); coNext; }
+        if( !process::loop::empty() ){ process::loop::next(); coNext; }
+        if( !process::poll::empty() ){ process::poll::next(); coNext; }
+             process::yield();
+        
     coStop
     }
 

@@ -10,6 +10,7 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #pragma once
+#include <unistd.h>
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -85,6 +86,20 @@ namespace nodepp { namespace dns {
     /*─······································································─*/
 
     string_t lookup( string_t host ) { return lookup_ipv4( host ); }
+    
+    /*─······································································─*/
+
+    string_t get_hostname(){
+        auto socket = socket_t();
+        auto result = string_t();
+            
+        socket.SOCK    = SOCK_DGRAM;
+        socket.IPPROTO = IPPROTO_UDP;
+        socket.socket ( "loopback", 0 );
+        socket.connect();
+
+        return socket.get_sockname();
+    }
     
     /*─······································································─*/
 

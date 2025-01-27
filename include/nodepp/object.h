@@ -16,45 +16,47 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #include "any.h"
+#include "map.h"
 #include "initializer.h"
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
 namespace nodepp { namespace { 
 
-    template< class T > struct obj_type_id                   { static constexpr int value = 0x0000 |  0; };
+    template< class T > struct obj_type_id                      { static constexpr int value = 0x0000 |  0; };
 
-    template<>          struct obj_type_id<int>              { static constexpr int value = 0x0000 |  1; };
-    template<>          struct obj_type_id<uint>             { static constexpr int value = 0x0000 |  2; };
-    template<>          struct obj_type_id<bool>             { static constexpr int value = 0x0000 |  3; };
-    template<>          struct obj_type_id<char>             { static constexpr int value = 0x0000 |  4; };
-    template<>          struct obj_type_id<long>             { static constexpr int value = 0x0000 |  5; };
-    template<>          struct obj_type_id<short>            { static constexpr int value = 0x0000 |  6; };
-    template<>          struct obj_type_id<uchar>            { static constexpr int value = 0x0000 |  7; };
-    template<>          struct obj_type_id<llong>            { static constexpr int value = 0x0000 |  8; };
-    template<>          struct obj_type_id<ulong>            { static constexpr int value = 0x0000 |  9; };
-    template<>          struct obj_type_id<ushort>           { static constexpr int value = 0x0000 | 10; };
-    template<>          struct obj_type_id<ullong>           { static constexpr int value = 0x0000 | 11; };
+    template<>          struct obj_type_id<int>                 { static constexpr int value = 0x0000 |  1; };
+    template<>          struct obj_type_id<uint>                { static constexpr int value = 0x0000 |  2; };
+    template<>          struct obj_type_id<bool>                { static constexpr int value = 0x0000 |  3; };
+    template<>          struct obj_type_id<char>                { static constexpr int value = 0x0000 |  4; };
+    template<>          struct obj_type_id<long>                { static constexpr int value = 0x0000 |  5; };
+    template<>          struct obj_type_id<short>               { static constexpr int value = 0x0000 |  6; };
+    template<>          struct obj_type_id<uchar>               { static constexpr int value = 0x0000 |  7; };
+    template<>          struct obj_type_id<llong>               { static constexpr int value = 0x0000 |  8; };
+    template<>          struct obj_type_id<ulong>               { static constexpr int value = 0x0000 |  9; };
+    template<>          struct obj_type_id<ushort>              { static constexpr int value = 0x0000 | 10; };
+    template<>          struct obj_type_id<ullong>              { static constexpr int value = 0x0000 | 11; };
 
-    template<>          struct obj_type_id<wchar_t>          { static constexpr int value = 0x0000 | 12; };
-    template<>          struct obj_type_id<char16_t>         { static constexpr int value = 0x0000 | 13; };
-    template<>          struct obj_type_id<char32_t>         { static constexpr int value = 0x0000 | 14; };
+    template<>          struct obj_type_id<wchar_t>             { static constexpr int value = 0x0000 | 12; };
+    template<>          struct obj_type_id<char16_t>            { static constexpr int value = 0x0000 | 13; };
+    template<>          struct obj_type_id<char32_t>            { static constexpr int value = 0x0000 | 14; };
 
-    template<>          struct obj_type_id<float>            { static constexpr int value = 0x0000 | 15; };
-    template<>          struct obj_type_id<double>           { static constexpr int value = 0x0000 | 16; };
-    template<>          struct obj_type_id<ldouble>          { static constexpr int value = 0x0000 | 17; };
+    template<>          struct obj_type_id<float>               { static constexpr int value = 0x0000 | 15; };
+    template<>          struct obj_type_id<double>              { static constexpr int value = 0x0000 | 16; };
+    template<>          struct obj_type_id<ldouble>             { static constexpr int value = 0x0000 | 17; };
     
-    template<>          struct obj_type_id<string_t>         { static constexpr int value = 0x0000 | 18; };
-    template< ulong N > struct obj_type_id<char[N]>          { static constexpr int value = 0x0000 | 18; };
-    template<>          struct obj_type_id<char*>            { static constexpr int value = 0x0000 | 18; };
+    template<>          struct obj_type_id<string_t>            { static constexpr int value = 0x0000 | 18; };
+    template< ulong N > struct obj_type_id<char[N]>             { static constexpr int value = 0x0000 | 18; };
+    template<>          struct obj_type_id<char*>               { static constexpr int value = 0x0000 | 18; };
 
-    template< class T >          struct obj_type_id<T*>      { static constexpr int value = 0xf000 | obj_type_id<T>::value; };
-    template< class T, ulong N > struct obj_type_id<T[N]>    { static constexpr int value = 0xf100 | obj_type_id<T>::value; };
-    template< class T > struct obj_type_id<initializer_t<T>> { static constexpr int value = 0xf300 | obj_type_id<T>::value; };
-    template< class T > struct obj_type_id<ptr_t<T>>         { static constexpr int value = 0xf400 | obj_type_id<T>::value; };
-    template< class T > struct obj_type_id<queue_t<T>>       { static constexpr int value = 0xf600 | obj_type_id<T>::value; };
+    template< class T >          struct obj_type_id<T*>         { static constexpr int value = 0xf000 | obj_type_id<T>::value; };
+    template< class T, ulong N > struct obj_type_id<T[N]>       { static constexpr int value = 0xf200 | obj_type_id<T>::value; };
+    template< class T > struct obj_type_id<initializer_t<T>>    { static constexpr int value = 0xf400 | obj_type_id<T>::value; };
+    template< class T > struct obj_type_id<ptr_t<T>>            { static constexpr int value = 0xf600 | obj_type_id<T>::value; };
+    template< class T > struct obj_type_id<queue_t<T>>          { static constexpr int value = 0xf800 | obj_type_id<T>::value; };
 
-    template< class T > struct obj_type_id<array_t<T>>       { static constexpr int value = 0xf700 | obj_type_id<T>::value; };
+    template< class T > struct obj_type_id<array_t<T>>          { static constexpr int value = 0xfA00 | obj_type_id<T>::value; };
+    template< class T > struct obj_type_id<map_t<string_t,T>>   { static constexpr int value = 0xfC00 | obj_type_id<T>::value; };
 
 }}
 
@@ -100,6 +102,8 @@ public:
 
     bool has_value() const noexcept { return obj->mem.has_value(); }
 
+    uint type_size() const noexcept { return obj->mem.type_size(); }
+
     template< class U > 
     U as() const { 
         if ( get_type_id() < 20 && get_type_id() > 21 &&
@@ -129,6 +133,21 @@ public:
         return mem.last()->data.second;
     }
 
+    bool has( const string_t& name ) const noexcept {
+        if( !has_value() || obj->type != 20  )
+          { obj->mem=QUEUE(); obj->type= 20; }
+
+        auto mem = type::cast<QUEUE>(obj->mem);
+        auto x   = mem.first();
+
+        while( x != nullptr ){
+           if( x->data.first == string::to_string(name) )
+             { return true; } x = x->next;
+        }
+
+        return false;
+    }
+
     /*─······································································─*/
 
     object_t& operator[]( const ulong& idx ) const {
@@ -136,6 +155,14 @@ public:
           { process::error("item is empty"); }
         auto mem = type::cast<ARRAY>(obj->mem);
         return mem[idx];
+    }
+
+    /*─······································································─*/
+
+    bool has( const ulong& idx ) const {
+        if( !has_value() )   { return false; }
+        auto mem = type::cast<ARRAY>(obj->mem);
+        return mem.size() >= idx;
     }
 
     /*─······································································─*/
@@ -148,9 +175,26 @@ public:
 
     int get_type_id() const noexcept { return obj->type; }
 
-    ulong size() const noexcept {
+    /*─······································································─*/
+
+    bool empty() const noexcept { 
         if( obj->type == 21 ){ 
-            auto mem = obj->mem.as<ARRAY>();
+            auto   mem = obj->mem.as<ARRAY>();
+            return mem.empty();
+        } elif( obj->type == 20 ) {
+            auto   mem = obj->mem.as<QUEUE>();
+            return mem.empty();
+        }   return false;
+    }
+
+    /*─······································································─*/
+
+    ulong size() const noexcept { 
+        if( obj->type == 21 ){ 
+            auto   mem = obj->mem.as<ARRAY>();
+            return mem.size();
+        } elif( obj->type == 20 ) {
+            auto   mem = obj->mem.as<QUEUE>();
             return mem.size();
         }   return 0;
     }

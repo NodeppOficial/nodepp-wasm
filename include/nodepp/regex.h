@@ -18,9 +18,10 @@ namespace nodepp { class regex_t {
 protected:
 
     struct NODE {
+        array_t<string_t> memory;
         string_t regex, _data; 
         ptr_t<int> _rep;
-        bool i;
+        bool i, j=false;
     };  ptr_t<NODE> obj;
     
     /*─······································································─*/
@@ -40,7 +41,7 @@ protected:
     int get_next_key( ulong _pos ) const noexcept {
         uchar k=0; while( _pos < obj->regex.size() ){
 
-            switch( obj->regex[_pos] ){
+            switch( obj->regex[_pos] ){  case '\\': _pos++;break;
                 case '[': k += 1; break; case ']': k -= 1; break; 
                 case '(': k += 2; break; case ')': k -= 2; break;
                 case '{': k += 3; break; case '}': k -= 3; break;
@@ -93,6 +94,7 @@ protected:
                   if ( idx == nullptr ){ goto DONE; }
                 else { pos[1]+= idx[1]-idx[0]-1;
                        off[1]+= idx[1]-idx[0];
+                       store_mem( str, idx );
                        goto LESS; 
                      }
             } elif( (uchar) obj->_data[0] == '[' ) {
@@ -105,13 +107,13 @@ protected:
                 elif ( x == 1 && list.some([&]( char itm ){ return _str_ == itm; }))
                      { off[1]++; goto LESS; } goto DONE;
 
-            } elif( (uchar) obj->_data[0] == '\0' ) {
+            } elif( (uchar) obj->_data[0] == 0x00 ) {
                                  goto CLSE;
-            } elif( (uchar) obj->_data[0] <= '\2' ) {
-                if( compile_flg( obj->_data[0], str, pos[1] ) )
+            } elif( (uchar) obj->_data[0] <= 0x02 ) {
+                if( compile_flg( obj->_data[0], obj->j, str, pos[1] ) )
                   { goto SKIP; } goto DONE;
-            } elif( (uchar) obj->_data[0] <= '\13' ) {
-                if( compile_cmd( obj->_data[0], str, pos[1] ) )
+            } elif( (uchar) obj->_data[0] <= 0x0f ) {
+                if( compile_cmd( obj->_data[0], obj->j, str, pos[1] ) )
                   { off[1]++; goto LESS; } 
                               goto DONE;
             } else {
@@ -135,17 +137,29 @@ protected:
         DONE:
 
             if( (ulong) pos[1] >= str.size() ){
-                  if( pos[2] >=obj->_rep[0] ){ goto CLSE; } 
-                  goto FAIL;
+            if( (ulong) pos[0] <= obj->regex.last() && 
+                 !( obj->regex[pos[0]] == '$'   || 
+                    obj->regex[pos[0]] == '*'   || 
+                    obj->regex[pos[0]] == '+'   ||
+                    obj->regex[pos[0]] == '?'   ||
+                    obj->regex[pos[0]] == '|'   ||
+                    obj->regex[pos[0]] == '{'   ||
+                    obj->regex[pos[0]] == '}'   ||
+                    obj->regex[pos[0]] == '['   ||
+                    obj->regex[pos[0]] == ']'   ||
+                    obj->regex[pos[0]] == '('   ||
+                    obj->regex[pos[0]] == ')'
+                )){ goto FAIL; }
+                if( pos[2] >= obj->_rep[0] ){ goto CLSE; } goto FAIL;
             } elif( pos[2] == 0 && obj->_rep[0] == 0 ){
-                  goto SKIP;
+                goto SKIP;
             } elif( obj->_rep[1] ==-1 ){
-                  if( pos[2] >=obj->_rep[0] ){ goto SKIP; } goto FAIL;
+                if( pos[2] >=obj->_rep[0] ){ goto SKIP; } goto FAIL;
             } elif( obj->_rep[1] != 0 ) {
-                  if( pos[2] > obj->_rep[1] ){ goto NEXT; }
-                elif( pos[2] >=obj->_rep[0] ){ goto NEXT; } goto FAIL;
+                if( pos[2] > obj->_rep[1] ){ goto NEXT; }
+              elif( pos[2] >=obj->_rep[0] ){ goto NEXT; } goto FAIL;
             } else {
-                  if( pos[2] >=obj->_rep[0] ){ goto NEXT; } goto FAIL;
+                if( pos[2] >=obj->_rep[0] ){ goto NEXT; } goto FAIL;
             }
 
         CLSE: pos[2] = 0; return -2;
@@ -157,23 +171,27 @@ protected:
     
     /*─······································································─*/
 
-    bool compile_cmd( char& flg, string_t& data, int pos ) const noexcept { 
-          if( flg == '\3'  &&  ( pos==0||(ulong)pos>=data.size()-1) ){ return true; } 
-        elif( flg == '\4'  && !( pos==0||(ulong)pos>=data.size()-1) ){ return true; }
-        elif( flg == '\5'  &&  string::is_alnum( data[pos] ) )       { return true; }
-        elif( flg == '\6'  &&  string::is_digit( data[pos] ) )       { return true; }
-        elif( flg == '\7'  &&  string::is_space( data[pos] ) )       { return true; }
-        elif( flg == '\10' && !string::is_alnum( data[pos] ) )       { return true; }
-        elif( flg == '\11' && !string::is_digit( data[pos] ) )       { return true; }
-        elif( flg == '\12' && !string::is_space( data[pos] ) )       { return true; } 
-        elif( flg == '\13' )                                         { return true; } return false;
+    bool compile_cmd( char& flg, bool b, string_t& data, int pos ) const noexcept { 
+          if( flg == 0x03 &&  b &&  ( pos==0||(ulong)pos>=data.size()-1) ){ return true; }
+        elif( flg == 0x03 && !b && !( pos==0||(ulong)pos>=data.size()-1) ){ return true; }
+        elif( flg == 0x04 &&  b &&  string::is_alnum( data[pos] ) )       { return true; }
+        elif( flg == 0x04 && !b && !string::is_alnum( data[pos] ) )       { return true; }
+        elif( flg == 0x05 &&  b &&  string::is_digit( data[pos] ) )       { return true; }
+        elif( flg == 0x05 && !b && !string::is_digit( data[pos] ) )       { return true; }
+        elif( flg == 0x06 &&  b &&  string::is_space( data[pos] ) )       { return true; } 
+        elif( flg == 0x06 && !b && !string::is_space( data[pos] ) )       { return true; } 
+        elif( flg == 0x07 &&  b &&  string::is_print( data[pos] ) )       { return true; } 
+        elif( flg == 0x07 && !b && !string::is_print( data[pos] ) )       { return true; } 
+        elif( flg == 0x0c )                                               { return true; }
+        elif( flg == 0x0f )                         { return obj->_data[1] == data[pos]; }
+        else{ return data[pos] == flg; } return false;
     }
     
     /*─······································································─*/
 
-    bool compile_flg( char& flg, string_t& data, int pos ) const noexcept {
-          if( flg == '\1' && ((ulong)pos >= data.size()-1) ){ return true; }
-        elif( flg == '\2' &&         pos == 0 )             { return true; } return false;
+    bool compile_flg( char& flg, bool /**/, string_t& data, int pos ) const noexcept {
+          if( flg == 0x01 && ((ulong)pos >= data.size()-1) ){ return true; }
+        elif( flg == 0x02 &&         pos == 0 )             { return true; } return false;
     }
     
     /*─······································································─*/
@@ -197,7 +215,15 @@ protected:
     
     /*─······································································─*/
 
+    void store_mem( string_t& data, ptr_t<ulong>& pos ) const noexcept {
+        if( pos == nullptr ){ return; }
+        obj->memory.push( data.slice( pos[0], pos[1] ) );
+    }
+    
+    /*─······································································─*/
+
     int compile( const string_t& str, ptr_t<ulong>& off, ptr_t<int>& pos ) const {
+        if( str == nullptr || obj->regex == nullptr ){ return -1; }
 
         if( obj->_rep == nullptr && obj->_data != nullptr ){
             pos[0] = get_next_repeat( pos[0] );
@@ -209,7 +235,6 @@ protected:
         }}
 
     coStart
-
         do { coNext;
 
               if( obj->regex[pos[0]] == ']' || obj->regex[pos[0]] == '{' ||
@@ -220,31 +245,34 @@ protected:
                  auto npos = get_next_key( pos[0] );
             if ( npos < 0 )
                { _ERROR(string::format( "regex: %d %c", pos[0], obj->regex[pos[0]] )); } 
-                 obj->_data = obj->regex.slice( pos[0],npos ); pos[0] = npos;
+                 obj->_data = obj->regex.slice( pos[0], npos ); pos[0] = npos;
             }
 
             elif( obj->regex[pos[0]] == '|' ){ break; }
-            elif( obj->regex[pos[0]] == '$' ){ obj->_data = "\1";  }
-            elif( obj->regex[pos[0]] == '^' ){ obj->_data = "\2";  }
-            elif( obj->regex[pos[0]] == '.' ){ obj->_data = "\13"; }
+            elif( obj->regex[pos[0]] == '$' ){ obj->_data.clear(); obj->_data.push( (char) 0x01 ); }
+            elif( obj->regex[pos[0]] == '^' ){ obj->_data.clear(); obj->_data.push( (char) 0x02 ); }
+            elif( obj->regex[pos[0]] == '.' ){ obj->_data.clear(); obj->_data.push( (char) 0x0c ); }
 
-            elif( obj->regex[pos[0]] == '\\' ){ pos[0]++; 
-              if( obj->regex[pos[0]] == 'b'  ){ obj->_data = "\3";  }
-            elif( obj->regex[pos[0]] == 'B'  ){ obj->_data = "\4";  }
-            elif( obj->regex[pos[0]] == 'w'  ){ obj->_data = "\5";  }
-            elif( obj->regex[pos[0]] == 'd'  ){ obj->_data = "\6";  }
-            elif( obj->regex[pos[0]] == 's'  ){ obj->_data = "\7";  }
-            elif( obj->regex[pos[0]] == 'W'  ){ obj->_data = "\10"; }
-            elif( obj->regex[pos[0]] == 'D'  ){ obj->_data = "\11"; }
-            elif( obj->regex[pos[0]] == 'S'  ){ obj->_data = "\12"; }
-            else{ obj->_data = string::to_string(obj->regex[pos[0]]); } 
+            elif( obj->regex[pos[0]] == '\\' ){ pos[0]++;
+                                                obj->_data.clear(); obj->_data.push( (char) 0x0f );
+              if( obj->regex[pos[0]] == 'b'  ){ obj->_data.clear(); obj->_data.push( (char) 0x03 ); obj->j = true;  }
+            elif( obj->regex[pos[0]] == 'B'  ){ obj->_data.clear(); obj->_data.push( (char) 0x03 ); obj->j = false; }
+            elif( obj->regex[pos[0]] == 'w'  ){ obj->_data.clear(); obj->_data.push( (char) 0x04 ); obj->j = true;  }
+            elif( obj->regex[pos[0]] == 'W'  ){ obj->_data.clear(); obj->_data.push( (char) 0x04 ); obj->j = false; }
+            elif( obj->regex[pos[0]] == 'd'  ){ obj->_data.clear(); obj->_data.push( (char) 0x05 ); obj->j = true;  }
+            elif( obj->regex[pos[0]] == 'D'  ){ obj->_data.clear(); obj->_data.push( (char) 0x05 ); obj->j = false; }
+            elif( obj->regex[pos[0]] == 's'  ){ obj->_data.clear(); obj->_data.push( (char) 0x06 ); obj->j = true;  }
+            elif( obj->regex[pos[0]] == 'S'  ){ obj->_data.clear(); obj->_data.push( (char) 0x06 ); obj->j = false; }
+            elif( obj->regex[pos[0]] == 'n'  ){ obj->_data.clear(); obj->_data.push( (char) 0x07 ); obj->j = true;  }
+            elif( obj->regex[pos[0]] == 'N'  ){ obj->_data.clear(); obj->_data.push( (char) 0x07 ); obj->j = false; }
+            else{ obj->_data += string::to_string(obj->regex[pos[0]]); } 
             }
 
             else {
                 obj->_data = string::to_string(obj->regex[pos[0]]);
             }   obj->_rep  = nullptr;
 
-        } while( (ulong)pos[0]++<=obj->regex.size() && (ulong)pos[0]<=obj->regex.size() );
+        } while( (ulong)++pos[0]<=obj->regex.size() );
 
         obj->_data=nullptr; obj->_rep=nullptr;
     coStop
@@ -257,12 +285,18 @@ public: regex_t () noexcept : obj( new NODE() ) {}
     
     /*─······································································─*/
 
+    ptr_t<string_t> get_memory() const noexcept {
+        return obj->memory.ptr();
+    }
+    
+    /*─······································································─*/
+
     ptr_t<ulong> _search( string_t _str, int off=0 ) const {
         ptr_t<ulong> res ({ (ulong)off, (ulong)off });
 
         for( auto &x: get_next_regex() ){
              ptr_t<int> pos ({ x, off, 0 }); res[0] = off; res[1] = off;
-             while( compile( _str, res, pos )==1 ){}
+             while( compile( _str, res, pos )==1 ){ /*process::next();*/ }
                 if( res[0] != res[1] ){ break; }
         }
 
@@ -282,10 +316,10 @@ public: regex_t () noexcept : obj( new NODE() ) {}
     /*─······································································─*/
 
     array_t<ptr_t<ulong>> search_all( const string_t& _str ) const noexcept {
-        array_t<ptr_t<ulong>> result; ulong s=0; while(1){
-            auto idx = search( _str, s );
+        array_t<ptr_t<ulong>> result; ulong off=0; while(1){
+            auto idx = search( _str, off );
             if( idx == nullptr )  { return result; }
-            if( idx[0] == idx[1] ){ return result; } s=idx[1];
+            if( idx[0] == idx[1] ){ return result; } off=idx[1];
                 ptr_t<ulong> mem({ idx[0], idx[1] }); result.push(mem);
         }
     }
@@ -306,14 +340,27 @@ public: regex_t () noexcept : obj( new NODE() ) {}
             _str.splice( x[0], x[1] - x[0], _rep );
         }   return _str;
     }
-    
-    /*─······································································─*/
 
-    string_t replace( string_t _str, const string_t& _rep, ulong s=0 ) const noexcept {
-        auto idx = search( _str, s );
+    string_t replace( string_t _str, const string_t& _rep, ulong off=0 ) const noexcept {
+        auto idx = search( _str, off );
         if( idx == nullptr )  { return _str; }
         if( idx[0] == idx[1] ){ return _str; }
             _str.splice( idx[0], idx[1] - idx[0], _rep ); return _str;
+    }
+    
+    /*─······································································─*/
+
+    string_t remove_all( string_t _str ) const noexcept {
+        auto idx = search_all( _str ).reverse(); for( auto x : idx ){
+            _str.splice( x[0], x[1] - x[0] );
+        }   return _str;
+    }
+
+    string_t remove( string_t _str, ulong off=0 ) const noexcept {
+        auto idx = search( _str, off );
+        if( idx == nullptr )  { return _str; }
+        if( idx[0] == idx[1] ){ return _str; }
+            _str.splice( idx[0], idx[1] - idx[0] ); return _str;
     }
     
     /*─······································································─*/
@@ -327,8 +374,8 @@ public: regex_t () noexcept : obj( new NODE() ) {}
     
     /*─······································································─*/
 
-    string_t match( const string_t& _str, ulong s=0 ) const noexcept { 
-        auto idx = search( _str, s );
+    string_t match( const string_t& _str, ulong off=0 ) const noexcept { 
+        auto idx = search( _str, off );
         if( idx == nullptr )  { return nullptr; }
         if( idx[0] == idx[1] ){ return nullptr; }
             return _str.slice( idx[0], idx[1] );
@@ -336,8 +383,8 @@ public: regex_t () noexcept : obj( new NODE() ) {}
     
     /*─······································································─*/
 
-    bool test( const string_t& _str, ulong s=0 ) const noexcept {
-        auto idx = search( _str, s );
+    bool test( const string_t& _str, ulong off=0 ) const noexcept {
+        auto idx = search( _str, off );
         if( idx == nullptr )  { return 0; }
         if( idx[0] == idx[1] ){ return 0; }
                                 return 1;
@@ -352,11 +399,29 @@ namespace nodepp { namespace regex {
     string_t replace_all( const string_t& _str, const string_t& _reg, const string_t& _rep, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.replace_all( _str, _rep );
     }
+
+    string_t replace_all( const string_t& _str, const regex_t& reg, const string_t& _rep ){
+        return reg.replace_all( _str, _rep );
+    }
+    
+    /*─······································································─*/
+
+    string_t remove_all( const string_t& _str, const string_t& _reg, bool _flg=false ){
+        regex_t reg( _reg, _flg ); return reg.remove_all( _str );
+    }
+
+    string_t remove_all( const string_t& _str, const regex_t& reg ){
+        return reg.remove_all( _str );
+    }
     
     /*─······································································─*/
 
     array_t<ptr_t<ulong>> search_all( const string_t& _str, const string_t& _reg, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.search_all( _str );
+    }
+
+    array_t<ptr_t<ulong>> search_all( const string_t& _str, const regex_t& reg ){
+        return reg.search_all( _str );
     }
     
     /*─······································································─*/
@@ -364,17 +429,39 @@ namespace nodepp { namespace regex {
     string_t replace( const string_t& _str, const string_t& _reg, const string_t& _rep, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.replace( _str, _rep );
     }
+
+    string_t replace( const string_t& _str, const regex_t& reg, const string_t& _rep ){
+        return reg.replace( _str, _rep );
+    }
+    
+    /*─······································································─*/
+
+    string_t remove( const string_t& _str, const string_t& _reg, bool _flg=false ){
+        regex_t reg( _reg, _flg ); return reg.remove( _str );
+    }
+
+    string_t remove( const string_t& _str, const regex_t& reg ){
+        return reg.remove( _str );
+    }
     
     /*─······································································─*/
 
     array_t<string_t> match_all( const string_t& _str, const string_t& _reg, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.match_all( _str );
     }
+
+    array_t<string_t> match_all( const string_t& _str, const regex_t& reg ){
+        return reg.match_all( _str );
+    }
     
     /*─······································································─*/
 
     ptr_t<ulong> search( const string_t& _str, const string_t& _reg, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.search( _str );
+    }
+
+    ptr_t<ulong> search( const string_t& _str, const regex_t& reg ){
+        return reg.search( _str );
     }
     
     /*─······································································─*/
@@ -383,10 +470,18 @@ namespace nodepp { namespace regex {
         regex_t reg( _reg, _flg ); return reg.match( _str );
     }
 
+    string_t match( const string_t& _str, const regex_t& reg ){
+        return reg.match( _str );
+    }
+
     /*─······································································─*/
 
     bool test( const string_t& _str, const string_t& _reg, bool _flg=false ){
         regex_t reg( _reg, _flg ); return reg.test( _str );
+    }
+
+    bool test( const string_t& _str, const regex_t& reg ){
+        return reg.test( _str );
     }
 
     /*─······································································─*/
@@ -399,6 +494,10 @@ namespace nodepp { namespace regex {
           if ( _reg.size() == 1 ){  return string::split( _str, _reg[0] ); }
         elif ( _reg.empty() ) { return string::split( _str, 1 ); }
         regex_t reg(_reg,_flg); return reg.split( _str ); 
+    }
+
+    array_t<string_t> split( const string_t& _str, const regex_t& reg ){ 
+        return reg.split( _str ); 
     }
 
     /*─······································································─*/

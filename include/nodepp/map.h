@@ -14,8 +14,7 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { template<class U, class V>
-class map_t { 
+namespace nodepp { template<class U, class V> class map_t { 
 protected:
 
     using T = type::pair< U, V >;
@@ -29,11 +28,6 @@ public:
     template< class... O >
     map_t( const T& argc, const O&... args ) noexcept : obj(new NODE()) {
         iterator::map([&]( T arg ){ obj->queue.push(arg); }, argc, args... );
-    }
-
-    template< ulong N >
-    map_t& operator=( const T (&args) [N] ) noexcept {
-        for( auto &x: args ){ obj->queue.push(x); } return *this;
     }
 
     template< ulong N >
@@ -72,15 +66,40 @@ public:
 
     /*─······································································─*/
 
+    bool has( const U& id ) const noexcept {
+        auto x = obj->queue.first(); 
+        
+        while( !id.empty() && x != nullptr ){
+            if ( x->data.first == id )
+               { return true; } 
+            else x = x->next; 
+        }
+
+        return false;
+    }
+
+    /*─······································································─*/
+
     void map( function_t<void,T&> callback ) const noexcept {
          obj->queue.map( callback );
     }
 
     /*─······································································─*/
 
-    ptr_t<T> data() const noexcept { return obj->queue.data(); }
+    bool     empty() const noexcept { return obj->queue.empty(); }
+
+    ulong     size() const noexcept { return obj->queue.size(); }
+
+    ptr_t<T>  data() const noexcept { return obj->queue.data(); }
     
-    ptr_t<T>  get() const noexcept { return obj->queue.data(); }
+    ptr_t<T>   get() const noexcept { return obj->queue.data(); }
+    
+    queue_t<T> raw() const noexcept { return obj->queue; }
+    
+    /*─······································································─*/
+
+    template< class... T >
+    void clear( const T&... args ) const noexcept { erase( args... ); }
     
     /*─······································································─*/
 
@@ -89,6 +108,7 @@ public:
     void erase( const U& id ) const noexcept {
          obj->queue.erase( obj->queue.index_of([&]( T arg ){ return arg.first == id; }) );
     }
+
 
 };}
 

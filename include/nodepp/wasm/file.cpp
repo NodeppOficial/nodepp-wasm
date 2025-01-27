@@ -10,10 +10,7 @@
 /*────────────────────────────────────────────────────────────────────────────*/
 
 #pragma once
-
-#include <sys/file.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <emscripten.h>
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
@@ -22,40 +19,12 @@ protected:
 
     struct NODE {
         ulong        range[2] ={ 0, 0 };
-        int          state    =  0;
-        int          fd       = -1;
-        int          feof     =  1;
+        FILE*        fd       = nullptr;
+        int          state    = 0;
+        int          feof     = 1;
         ptr_t<char>  buffer;
         string_t     borrow;
     };  ptr_t<NODE> obj = new NODE();
-    
-    /*─······································································─*/
-
-    virtual bool is_blocked( int& c ) const noexcept {
-        auto error = os::error(); if( c < 0 ){ return (
-             error == EWOULDBLOCK || error == EINPROGRESS ||
-             error == EALREADY    || error == EAGAIN
-    ); } return 0; }
-    
-    /*─······································································─*/
-    
-    virtual int set_nonbloking_mode() const noexcept {
-            int flags = fcntl( obj->fd, F_GETFL, 0 );
-        return fcntl( obj->fd, F_SETFL, flags | O_NONBLOCK );
-    }
-    
-    /*─······································································─*/
-
-    uint get_fd_flag( const string_t& flag ){ uint _flag = O_NONBLOCK;
-          if( flag == "r"  ){ _flag |= O_RDONLY ;                     }
-        elif( flag == "w"  ){ _flag |= O_WRONLY | O_CREAT  | O_TRUNC; }
-        elif( flag == "a"  ){ _flag |= O_WRONLY | O_APPEND | O_CREAT; }
-        elif( flag == "r+" ){ _flag |= O_RDWR   | O_APPEND ;          }
-        elif( flag == "w+" ){ _flag |= O_RDWR   | O_APPEND | O_CREAT; }
-        elif( flag == "a+" ){ _flag |= O_RDWR   | O_APPEND ;          }
-        else                { _flag |= O_RDWR   | O_TMPFILE;          }
-        return  _flag;
-    }
 
 public: file_t() noexcept {}
 
@@ -71,29 +40,26 @@ public: file_t() noexcept {}
     
     /*─······································································─*/
     
-    virtual ~file_t() noexcept {
-        if( obj.count() > 1 || obj->fd < 3 ){ return; } 
-        if( obj->state ==-2 ){ return; } free();
-    }
+    virtual ~file_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
     
     /*─······································································─*/
 
     file_t( const string_t& path, const string_t& mode, const ulong& _size=CHUNK_SIZE ){
-            obj->fd = open( path.data(), get_fd_flag( mode ), 0644 );
-        if( obj->fd < 0 ){
+            obj->fd = fopen( path.c_str(), mode.c_str() ); 
+        if( obj->fd == nullptr ){
             process::error("such file or directory does not exist");
-        }   set_nonbloking_mode(); set_buffer_size( _size ); 
+        }   set_buffer_size( _size ); 
     }
 
-    file_t( const int& fd, const ulong& _size=CHUNK_SIZE ){
-        if( fd < 0 ){
-            process::error("such file or directory does not exist");
-        }   obj->fd = fd; set_nonbloking_mode(); set_buffer_size( _size ); 
+    file_t( FILE* fd, const ulong& _size=CHUNK_SIZE ){
+        if( fd == nullptr )
+          { process::error("such file or directory does not exist"); }   
+            obj->fd = fd; set_buffer_size( _size ); 
     }
 
     /*─······································································─*/
 
-    bool    is_closed() const noexcept { return obj->state <  0 ||  is_feof() || obj->fd == -1; }
+    bool    is_closed() const noexcept { return obj->state <  0 ||  is_feof() || feof(obj->fd); }
     bool      is_feof() const noexcept { return obj->feof  <= 0 && obj->feof  != -2; }
     bool is_available() const noexcept { return obj->state >= 0 && !is_closed(); }
 
@@ -110,7 +76,7 @@ public: file_t() noexcept {}
     void set_range( ulong x, ulong y ) const noexcept { obj->range[0] = x; obj->range[1] = y; }
     ulong* get_range() const noexcept { return obj == nullptr ? nullptr : obj->range; }
     int    get_state() const noexcept { return obj == nullptr ?      -1 : obj->state; }
-    int       get_fd() const noexcept { return obj == nullptr ?      -1 : obj->fd; }
+    FILE*     get_fd() const noexcept { return obj == nullptr ? nullptr : obj->fd; }
     
     /*─······································································─*/
 
@@ -129,9 +95,8 @@ public: file_t() noexcept {}
     /*─······································································─*/
 
     ulong size() const noexcept { auto curr = pos();
-        if( lseek( obj->fd, 0 , SEEK_END )<0 ) return 0;
-        ulong size = lseek( obj->fd, 0, SEEK_END );
-        pos( curr ); return size;
+        if( fseek( obj->fd, 0 , SEEK_END )>0 ) return 0;
+        ulong size = ftell(obj->fd); pos(curr); return size;
     }
     
     /*─······································································─*/
@@ -144,26 +109,29 @@ public: file_t() noexcept {}
     
     virtual void free() const noexcept {
         if( obj->state == -3 && obj.count() > 1 ){ resume(); return; }
-        if( obj->state == -2 ){ return; } obj->state = -2;
-        if( obj->fd    >=  3 ) ::close( obj->fd ); 
-        close(); onClose.emit();
+        if( obj->state == -2 ){ return; } close(); obj->state = -2;
+        fclose( obj->fd ); onClose.emit();
     }
 
     /*─······································································─*/
 
     ulong pos( ulong _pos ) const noexcept {
-        auto   _npos = lseek( obj->fd, _pos, SEEK_SET ); 
-        return _npos < 0 ? 0 : _npos; 
+        fseek( obj->fd, _pos, SEEK_SET ); 
+        return pos();
     }
 
-    ulong pos() const noexcept {
-        auto   _npos = lseek( obj->fd, 0, SEEK_CUR ); 
-        return _npos < 0 ? 0 : _npos; 
-    }
+    ulong pos() const noexcept { return ftell( obj->fd ); }
     
     /*─······································································─*/
 
     char read_char() const noexcept { return read(1)[0]; }
+
+    string_t read_until( char ch ) const noexcept {
+        auto gen = nodepp::_file_::until();
+        while( gen( this, ch ) == 1 )
+             { process::next(); }
+        return gen.data;
+    }
 
     string_t read_line() const noexcept {
         auto gen = nodepp::_file_::line();
@@ -190,17 +158,23 @@ public: file_t() noexcept {}
     
     /*─······································································─*/
 
-    virtual int _read( char* bf, const ulong& sx ) const noexcept {
+    virtual int _read( char* bf, const ulong& sx )  const noexcept { return __read( bf, sx ); }
+
+    virtual int _write( char* bf, const ulong& sx ) const noexcept { return __write( bf, sx ); }
+    
+    /*─······································································─*/
+
+    virtual int __read( char* bf, const ulong& sx ) const noexcept {
         if( is_closed() ){ return -1; } if( sx==0 ){ return 0; }
-        obj->feof = ::read( obj->fd, bf, sx );
-        obj->feof = is_blocked(obj->feof) ? -2 : obj->feof;
+        obj->feof = fread( bf, sizeof(char), sx, obj->fd );
+        if( obj->feof <= 0 || feof( obj->fd ) ){ close(); } 
         return obj->feof;
     }
 
-    virtual int _write( char* bf, const ulong& sx ) const noexcept {
+    virtual int __write( char* bf, const ulong& sx ) const noexcept {
         if( is_closed() ){ return -1; } if( sx==0 ){ return 0; }
-        obj->feof = ::write( obj->fd, bf, sx );
-        obj->feof = is_blocked(obj->feof) ? -2 : obj->feof;
+        obj->feof = fwrite( bf, sizeof(char), sx, obj->fd );
+        if( obj->feof <= 0 || feof( obj->fd ) ){ close(); } 
         return obj->feof;
     }
 
